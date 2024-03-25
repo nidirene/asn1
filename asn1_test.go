@@ -363,7 +363,7 @@ func TestCmpOid(t *testing.T) {
 
 func TestSimpleNull(t *testing.T) {
 	tests := []testCase{
-		{Null{}, []byte{0x05, 0x00}},
+		{Null{Present: true}, []byte{0x05, 0x00}},
 	}
 	ctx := NewContext()
 	testEncodeDecode(t, ctx, "", tests...)

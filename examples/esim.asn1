@@ -1,0 +1,184 @@
+PEDefinitions { 
+	joint-iso-itu-t(2) international-organizations(23) tca(143) euicc-profile(1) spec-version(1) version-three(3) 
+} 
+DEFINITIONS IMPLICIT TAGS 
+EXTENSIBILITY IMPLIED ::=
+
+BEGIN
+EXPORTS UICCCapability; 
+
+-- Basic integer types, for size constraints
+maxUInt8 INTEGER ::= 255
+UInt8 ::= INTEGER (0..maxUInt8)
+maxUInt15 INTEGER ::= 32767
+UInt15 ::= INTEGER (0..maxUInt15)
+maxUInt16 INTEGER ::= 65535
+UInt16 ::= INTEGER (0..maxUInt16)
+maxUInt31 INTEGER ::= 2147483647
+UInt31 ::= INTEGER (0..maxUInt31)
+
+ApplicationIdentifier ::= OCTET STRING (SIZE(5..16))
+
+PEHeader ::= SEQUENCE {
+	mandated NULL OPTIONAL,
+	-- if set, indicate that the support of this PE is mandatory
+	identification UInt15 -- Identification number of this PE
+}
+ProfileElement ::= CHOICE {
+	header ProfileHeader,
+	genericFileManagement PE-GenericFileManagement
+}
+
+ProfileHeader ::= SEQUENCE {
+	major-version UInt8, -- set to 3 for this version of the specification
+	minor-version UInt8, -- set to 3 for this version of the specification
+	profileType UTF8String (SIZE (1..100)) OPTIONAL, -- Profile type
+	iccid OCTET STRING (SIZE (10)), -- ICCID of the Profile 
+	pol OCTET STRING OPTIONAL,
+	eUICC-Mandatory-services ServicesList,
+	eUICC-Mandatory-GFSTEList SEQUENCE OF OBJECT IDENTIFIER,
+	connectivityParameters OCTET STRING OPTIONAL,
+	eUICC-Mandatory-AIDs SEQUENCE OF SEQUENCE {
+		aid ApplicationIdentifier,
+		version OCTET STRING (SIZE(2))
+	} OPTIONAL,
+  iotOptions IotOptions OPTIONAL -- details for IoT Minimal Profile, mandatory for IoT Minimal Profiles
+}
+
+IotOptions ::= SEQUENCE {
+	pix OCTET STRING (SIZE (7..11)) -- PIX value to be used for IoT Minimal Profiles
+}
+
+ServicesList ::= SEQUENCE {
+	/* Contactless */
+	contactless NULL OPTIONAL,
+
+	/* NAAs */
+	usim NULL OPTIONAL,
+	isim NULL OPTIONAL,
+	csim NULL OPTIONAL,
+
+	/* NAA algorithms */
+	milenage NULL OPTIONAL,
+	tuak128 NULL OPTIONAL,
+	cave NULL OPTIONAL,
+
+	/* USIM/ISIM services */
+	gba-usim NULL OPTIONAL,
+	gba-isim NULL OPTIONAL,
+	mbms NULL OPTIONAL,
+
+	/* EAP service */
+	eap NULL OPTIONAL,
+
+	/* Application Runtime environment */
+	javacard NULL OPTIONAL,
+	multos NULL OPTIONAL,
+
+	/* NAAs */
+	multiple-usim NULL OPTIONAL,
+	multiple-isim NULL OPTIONAL,
+	multiple-csim NULL OPTIONAL,
+
+	/* Additional algorithms */
+	tuak256 NULL OPTIONAL,
+	usim-test-algorithm NULL OPTIONAL,
+
+	/* File type */
+	ber-tlv NULL OPTIONAL,
+
+	/* Linked files */
+	dfLink NULL OPTIONAL,
+
+	/* Support of CAT_TP */
+	cat-tp NULL OPTIONAL,
+
+	/* Support of 5G */
+	get-identity NULL OPTIONAL,
+	profile-a-x25519 NULL OPTIONAL,
+	profile-b-p256 NULL OPTIONAL,
+	suciCalculatorApi NULL OPTIONAL,
+
+	/* Support of DNS Resolution */
+	dns-resolution NULL OPTIONAL,
+
+	/* Support of GP Amd F SCP11 */
+	scp11ac NULL OPTIONAL,
+	scp11c-authorization-mechanism NULL OPTIONAL,
+
+	/* Support of S16 mode as defined in GP Amd D and Amd F */
+	s16mode NULL OPTIONAL,
+
+	/* Support of enhanced AKA algorithm defined in 3GPP */
+	eaka NULL OPTIONAL
+}
+
+/* Create GenericFileManagement */
+PE-GenericFileManagement ::= SEQUENCE {
+	gfm-header PEHeader,
+	fileManagementCMD SEQUENCE (SIZE (1..MAX)) OF FileManagement
+}
+
+FileManagement ::= SEQUENCE (SIZE (1..MAX)) OF CHOICE {
+  filePath [0] OCTET STRING (SIZE (0..8)), -- Use Temporary File ID for ADF
+  createFCP [APPLICATION 2] Fcp,
+  fillFileOffset UInt16,
+  fillFileContent [1] OCTET STRING
+}
+
+MappingParameter ::= SEQUENCE {
+  mappingOptions	OCTET STRING (SIZE(1)),
+	mappingSource	ApplicationIdentifier
+}
+
+UICCCapability ::= BIT STRING {
+	contactlessSupport(0), 	-- Contactless (SWP, HCI and associated APIs)
+	usimSupport(1), 		    -- USIM as defined by 3GPP
+	isimSupport(2), 		    -- ISIM as defined by 3GPP
+	csimSupport(3), 		    -- CSIM as defined by 3GPP2
+
+	akaMilenage(4), 		    -- Milenage as AKA algorithm
+	akaCave(5),             -- CAVE as authentication algorithm
+	akaTuak128(6), 			    -- TUAK as AKA algorithm with 128 bit key length
+	akaTuak256(7), 			    -- TUAK as AKA algorithm with 256 bit key length
+	usimTestAlgorithm(8), 	-- USIM test algorithm
+	rfu2(9), 					      -- reserved for further algorithms
+
+	gbaAuthenUsim(10),	    -- GBA authentication in the context of USIM
+	gbaAuthenISim(11), 	    -- GBA authentication in the context of ISIM
+	mbmsAuthenUsim(12), 	  -- MBMS authentication in the context of USIM
+	eapClient(13), 			    -- EAP client
+
+	javacard(14),				    -- Java Card(TM) support
+	multos(15),				      -- Multos support
+
+	multipleUsimSupport(16),	-- Multiple USIM applications are supported within the same Profile
+	multipleIsimSupport(17),	-- Multiple ISIM applications are supported within the same Profile
+	multipleCsimSupport(18),	-- Multiple CSIM applications are supported within the same Profile
+
+	berTlvFileSupport(19),	-- BER TLV files
+	dfLinkSupport(20),	-- Linked Directory Files
+	catTp(21),					-- Support of CAT TP
+	getIdentity(22),		-- Support of the GET IDENTITY command as defined in ETSI TS 102 221
+	profile-a-x25519(23),	-- Support of ECIES Profile A as defined in 3GPP TS 33.501 [87]
+	profile-b-p256(24),	-- Support of ECIES Profile B as defined in 3GPP TS 33.501 [87]
+	suciCalculatorApi(25),	-- Support of the associated API for SUCI derivation as defined in 3GPP 31.130 [31.130]
+	dns-resolution(26),	-- Support of DNS Resolution as defined by GP Amd B
+	scp11ac(27),			-- Support of GP Amd F SCP11 variants a and c
+	scp11c-authorization-mechanism(28),	-- Support of SCP11c authorization mechanism (Tag 'BF20')
+	s16mode(29),			-- Support of S16 mode as defined in GP Amd D and Amd F
+	eaka(30),					-- Support of enhanced AKA algorithm as defined in 3GPP TS [33.102]
+	iotminimal(31)			-- Support of IoT Minimal Profile as described in section 7.5
+}
+
+ProprietaryInfo ::= SEQUENCE {
+	specialFileInformation [PRIVATE 0] OCTET STRING (SIZE (1)) DEFAULT '00'H,
+	fillPattern [PRIVATE 1] OCTET STRING (SIZE(1..200)) OPTIONAL,
+	repeatPattern [PRIVATE 2] OCTET STRING (SIZE(1..200)) OPTIONAL,
+	maximumFileSize [6] OCTET STRING OPTIONAL,
+	fileDetails [4] OCTET STRING (SIZE(1)) DEFAULT '01'H
+}
+
+
+
+END
