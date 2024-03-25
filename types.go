@@ -12,7 +12,7 @@ var (
 	bigIntType    = reflect.TypeOf((*big.Int)(nil))
 	bitStringType = reflect.TypeOf(BitString{})
 	oidType       = reflect.TypeOf(Oid{})
-	nullType      = reflect.TypeOf(Null{})
+	nullType      = reflect.TypeOf(Null{Present: true})
 	enumType      = reflect.TypeOf(Enum(0))
 )
 
@@ -365,8 +365,7 @@ func (ctx *Context) encodeOid(value reflect.Value) ([]byte, error) {
 			return nil, parseError("invalid value for first element of OID: %d", value2)
 		}
 	}
-
-	bytes := []byte{byte(40*value1 + value2)}
+	bytes := []byte{byte(value1*40 + value2)}
 	for i := 2; i < len(oid); i++ {
 		bytes = append(bytes, encodeMultiByteTag(oid[i])...)
 	}
@@ -381,7 +380,7 @@ func (ctx *Context) decodeOid(data []byte, value reflect.Value) error {
 	}
 
 	value1 := uint(data[0] / 40)
-	value2 := uint(data[0]) - 40*value1
+	value2 := uint(data[0] % 40)
 	oid := Oid{value1, value2}
 
 	reader := bytes.NewBuffer(data[1:])
@@ -398,7 +397,9 @@ func (ctx *Context) decodeOid(data []byte, value reflect.Value) error {
 }
 
 // Null is used to encode and decode ASN.1 NULLs.
-type Null struct{}
+type Null struct {
+	Present bool
+}
 
 func (ctx *Context) encodeNull(value reflect.Value) ([]byte, error) {
 	_, ok := value.Interface().(Null)
@@ -414,9 +415,11 @@ func (ctx *Context) decodeNull(data []byte, value reflect.Value) error {
 	if !ok {
 		return syntaxError("invalid type: %s", value.Type())
 	}
+
 	if len(data) != 0 {
 		return parseError("invalid data for Null type")
 	}
+	value.Set(reflect.ValueOf(Null{Present: true}))
 	return nil
 }
 

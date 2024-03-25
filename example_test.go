@@ -4,7 +4,7 @@ import (
 	"log"
 	"reflect"
 
-	"github.com/PromonLogicalis/asn1"
+	"github.com/nidirene/asn1"
 )
 
 func Example() {
